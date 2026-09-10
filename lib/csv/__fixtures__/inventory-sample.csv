@@ -1,0 +1,9 @@
+sku,product_name,category,stock_quantity
+LUM-TOP-01,オーガニックコットンTシャツ,トップス,20
+LUM-TOP-02,リネンブラウス,トップス,12
+LUM-BTM-01,テーパードパンツ,ボトムス,15
+LUM-BTM-02,フレアスカート,ボトムス,18
+LUM-OUT-01,ウールコート,アウター,9
+LUM-OUT-02,ダウンジャケット,アウター,10
+LUM-ACC-01,レザーベルト,アクセサリー,6
+LUM-ACC-02,シルクスカーフ,アクセサリー,8
