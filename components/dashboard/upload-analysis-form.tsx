@@ -39,6 +39,21 @@ export function UploadAnalysisForm() {
         />
       </div>
 
+      <div className="space-y-1">
+        <label htmlFor="inventoryCsv" className="block text-base font-medium text-zinc-700">
+          在庫CSVファイル
+        </label>
+        <p className="text-sm text-zinc-500">SKUごとの現在庫数（在庫回転率の算出に使用します）</p>
+        <input
+          id="inventoryCsv"
+          type="file"
+          name="inventoryCsv"
+          accept=".csv,text/csv"
+          required
+          className="block w-full min-h-11 rounded-md border border-zinc-300 bg-white text-base text-zinc-700 file:mr-4 file:h-11 file:rounded-md file:border-0 file:bg-zinc-100 file:px-4 file:text-base file:font-medium file:text-zinc-700"
+        />
+      </div>
+
       <SubmitButton />
 
       {state.status === "error" ? (

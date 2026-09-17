@@ -1,16 +1,22 @@
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { RevenueTrendChart } from "@/components/dashboard/revenue-trend-chart";
+import { CategoryBreakdownChart } from "@/components/dashboard/category-breakdown-chart";
+import { SkuRankingTable } from "@/components/dashboard/sku-ranking-table";
+import { InventoryTurnoverTable } from "@/components/dashboard/inventory-turnover-table";
 import { AiSummary } from "@/components/dashboard/ai-summary";
 import { UploadAnalysisForm } from "@/components/dashboard/upload-analysis-form";
 import { Card, CardHeader } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
-import type { MonthlyKpi, KpiSummary } from "@/lib/kpi/aggregate";
+import type { CategoryBreakdown, InventoryTurnoverRow, MonthlyKpi, KpiSummary, SkuRanking } from "@/lib/kpi/aggregate";
 import { AnalysisSchema } from "@/lib/ai/schema";
 import { signOut } from "./auth/actions";
 
 type ReportRow = {
   monthly_kpi: MonthlyKpi[];
   summary_kpi: KpiSummary;
+  category_breakdown: CategoryBreakdown[];
+  sku_ranking: SkuRanking[];
+  inventory_turnover: InventoryTurnoverRow[];
   ai_summary: string;
   ai_actions: string[];
   created_at: string;
@@ -28,7 +34,9 @@ export default async function DashboardPage() {
     supabase.auth.getUser(),
     supabase
       .from("reports")
-      .select("monthly_kpi, summary_kpi, ai_summary, ai_actions, created_at")
+      .select(
+        "monthly_kpi, summary_kpi, category_breakdown, sku_ranking, inventory_turnover, ai_summary, ai_actions, created_at",
+      )
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle<ReportRow>(),
@@ -61,6 +69,12 @@ export default async function DashboardPage() {
           </div>
 
           <RevenueTrendChart data={report.monthly_kpi.map((m) => ({ month: m.month, revenue: m.revenue }))} />
+
+          <CategoryBreakdownChart data={report.category_breakdown} />
+
+          <SkuRankingTable data={report.sku_ranking} />
+
+          <InventoryTurnoverTable data={report.inventory_turnover} />
 
           {analysis?.success ? <AiSummary analysis={analysis.data} /> : null}
 

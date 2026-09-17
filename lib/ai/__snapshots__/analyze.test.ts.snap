@@ -49,6 +49,148 @@ exports[`analyzeSalesReport > sends the real aggregated CSV numbers to Claude an
       "value": 46.666666666666664,
       "momChange": 21.33333333333331
     }
-  }
+  },
+  "categoryBreakdown": [
+    {
+      "category": "アウター",
+      "revenue": 287400,
+      "profit": 175400,
+      "share": 51.266500178380305
+    },
+    {
+      "category": "トップス",
+      "revenue": 114400,
+      "profit": 71400,
+      "share": 20.406707099536213
+    },
+    {
+      "category": "ボトムス",
+      "revenue": 82200,
+      "profit": 51000,
+      "share": 14.662861220121298
+    },
+    {
+      "category": "アクセサリー",
+      "revenue": 76600,
+      "profit": 51300,
+      "share": 13.663931501962184
+    }
+  ],
+  "skuRanking": [
+    {
+      "sku": "LUM-OUT-01",
+      "productName": "ウールコート",
+      "quantity": 6,
+      "revenue": 148800
+    },
+    {
+      "sku": "LUM-OUT-02",
+      "productName": "ダウンジャケット",
+      "quantity": 7,
+      "revenue": 138600
+    },
+    {
+      "sku": "LUM-TOP-02",
+      "productName": "リネンブラウス",
+      "quantity": 9,
+      "revenue": 61200
+    },
+    {
+      "sku": "LUM-BTM-01",
+      "productName": "テーパードパンツ",
+      "quantity": 6,
+      "revenue": 53400
+    },
+    {
+      "sku": "LUM-TOP-01",
+      "productName": "オーガニックコットンTシャツ",
+      "quantity": 14,
+      "revenue": 53200
+    },
+    {
+      "sku": "LUM-ACC-02",
+      "productName": "シルクスカーフ",
+      "quantity": 7,
+      "revenue": 40600
+    },
+    {
+      "sku": "LUM-ACC-01",
+      "productName": "レザーベルト",
+      "quantity": 8,
+      "revenue": 36000
+    },
+    {
+      "sku": "LUM-BTM-02",
+      "productName": "フレアスカート",
+      "quantity": 4,
+      "revenue": 28800
+    }
+  ],
+  "inventoryTurnover": [
+    {
+      "sku": "LUM-ACC-01",
+      "productName": "レザーベルト",
+      "stockQuantity": 6,
+      "soldQuantity": 8,
+      "turnoverRate": 1.3333333333333333,
+      "risk": "stockout"
+    },
+    {
+      "sku": "LUM-ACC-02",
+      "productName": "シルクスカーフ",
+      "stockQuantity": 8,
+      "soldQuantity": 7,
+      "turnoverRate": 0.875,
+      "risk": "normal"
+    },
+    {
+      "sku": "LUM-TOP-02",
+      "productName": "リネンブラウス",
+      "stockQuantity": 12,
+      "soldQuantity": 9,
+      "turnoverRate": 0.75,
+      "risk": "normal"
+    },
+    {
+      "sku": "LUM-TOP-01",
+      "productName": "オーガニックコットンTシャツ",
+      "stockQuantity": 20,
+      "soldQuantity": 14,
+      "turnoverRate": 0.7,
+      "risk": "normal"
+    },
+    {
+      "sku": "LUM-OUT-02",
+      "productName": "ダウンジャケット",
+      "stockQuantity": 10,
+      "soldQuantity": 7,
+      "turnoverRate": 0.7,
+      "risk": "normal"
+    },
+    {
+      "sku": "LUM-OUT-01",
+      "productName": "ウールコート",
+      "stockQuantity": 9,
+      "soldQuantity": 6,
+      "turnoverRate": 0.6666666666666666,
+      "risk": "normal"
+    },
+    {
+      "sku": "LUM-BTM-01",
+      "productName": "テーパードパンツ",
+      "stockQuantity": 15,
+      "soldQuantity": 6,
+      "turnoverRate": 0.4,
+      "risk": "normal"
+    },
+    {
+      "sku": "LUM-BTM-02",
+      "productName": "フレアスカート",
+      "stockQuantity": 18,
+      "soldQuantity": 4,
+      "turnoverRate": 0.2222222222222222,
+      "risk": "excess"
+    }
+  ]
 }"
 `;

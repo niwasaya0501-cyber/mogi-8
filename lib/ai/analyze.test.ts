@@ -12,13 +12,23 @@ vi.mock("@anthropic-ai/sdk", () => ({
 }));
 
 const { analyzeSalesReport } = await import("./analyze");
-const { parseSalesCsv } = await import("@/lib/csv/parser");
-const { aggregateMonthly, summarizeLatestMonth } = await import("@/lib/kpi/aggregate");
+const { parseInventoryCsv, parseSalesCsv } = await import("@/lib/csv/parser");
+const {
+  aggregateCategoryBreakdown,
+  aggregateInventoryTurnover,
+  aggregateMonthly,
+  aggregateSkuRanking,
+  summarizeLatestMonth,
+} = await import("@/lib/kpi/aggregate");
+
+async function loadFixture(name: string): Promise<File> {
+  const filePath = path.join(import.meta.dirname, "../csv/__fixtures__", name);
+  const buffer = await readFile(filePath);
+  return new File([buffer], name, { type: "text/csv" });
+}
 
 async function loadSalesFixture(): Promise<File> {
-  const filePath = path.join(import.meta.dirname, "../csv/__fixtures__/sales-sample.csv");
-  const buffer = await readFile(filePath);
-  return new File([buffer], "sales-sample.csv", { type: "text/csv" });
+  return loadFixture("sales-sample.csv");
 }
 
 beforeEach(() => {
@@ -27,11 +37,16 @@ beforeEach(() => {
 
 describe("analyzeSalesReport", () => {
   it("sends the real aggregated CSV numbers to Claude and returns a validated Analysis object", async () => {
-    const file = await loadSalesFixture();
-    const { valid } = await parseSalesCsv(file);
+    const salesFile = await loadSalesFixture();
+    const inventoryFile = await loadFixture("inventory-sample.csv");
+    const { valid } = await parseSalesCsv(salesFile);
+    const { valid: inventory } = await parseInventoryCsv(inventoryFile);
     const monthly = aggregateMonthly(valid);
     const summary = summarizeLatestMonth(monthly);
     if (!summary) throw new Error("fixture produced no monthly summary");
+    const categoryBreakdown = aggregateCategoryBreakdown(valid);
+    const skuRanking = aggregateSkuRanking(valid);
+    const inventoryTurnover = aggregateInventoryTurnover(valid, inventory);
 
     createMock.mockResolvedValue({
       content: [
@@ -51,7 +66,7 @@ describe("analyzeSalesReport", () => {
       ],
     });
 
-    const result = await analyzeSalesReport({ monthly, summary });
+    const result = await analyzeSalesReport({ monthly, summary, categoryBreakdown, skuRanking, inventoryTurnover });
 
     // Claudeに実際に渡したプロンプト（=集計ロジックが出した実データ）をスナップショット化。
     // 集計ロジックやプロンプトの変更で数字の解釈がおかしくなったら、この差分で検知できる。
@@ -72,6 +87,14 @@ describe("analyzeSalesReport", () => {
       repeatRate: { value: 0 },
     };
 
-    await expect(analyzeSalesReport({ monthly: [], summary: emptySummary })).rejects.toThrow();
+    await expect(
+      analyzeSalesReport({
+        monthly: [],
+        summary: emptySummary,
+        categoryBreakdown: [],
+        skuRanking: [],
+        inventoryTurnover: [],
+      }),
+    ).rejects.toThrow();
   });
 });

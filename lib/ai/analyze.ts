@@ -2,13 +2,22 @@ import Anthropic from "@anthropic-ai/sdk";
 import { AnalysisSchema, type Analysis } from "./schema";
 import { extractJson } from "./extractJson";
 import { ANALYSIS_SYSTEM_PROMPT } from "./prompt";
-import type { KpiSummary, MonthlyKpi } from "@/lib/kpi/aggregate";
+import type {
+  CategoryBreakdown,
+  InventoryTurnoverRow,
+  KpiSummary,
+  MonthlyKpi,
+  SkuRanking,
+} from "@/lib/kpi/aggregate";
 
 const client = new Anthropic();
 
 export type SalesReportInput = {
   monthly: MonthlyKpi[];
   summary: KpiSummary;
+  categoryBreakdown: CategoryBreakdown[];
+  skuRanking: SkuRanking[];
+  inventoryTurnover: InventoryTurnoverRow[];
 };
 
 export async function analyzeSalesReport(input: SalesReportInput): Promise<Analysis> {

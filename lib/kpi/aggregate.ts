@@ -1,4 +1,4 @@
-import type { SaleRow } from "@/lib/csv/schema";
+import type { InventoryRow, SaleRow } from "@/lib/csv/schema";
 
 export type MonthlyKpi = {
   monthKey: string; // "2025-09"
@@ -67,4 +67,98 @@ export function summarizeLatestMonth(monthly: MonthlyKpi[]): KpiSummary | undefi
     profit: { value: current.profit, momChange: momChange(current.profit, previous?.profit) },
     repeatRate: { value: current.repeatRate, momChange: momChange(current.repeatRate, previous?.repeatRate) },
   };
+}
+
+export type CategoryBreakdown = {
+  category: string;
+  revenue: number;
+  profit: number;
+  share: number; // 売上構成比（0-100）
+};
+
+const UNCATEGORIZED_LABEL = "未分類";
+
+export function aggregateCategoryBreakdown(sales: SaleRow[]): CategoryBreakdown[] {
+  const totalRevenue = sales.reduce((sum, r) => sum + r.revenue, 0);
+
+  const byCategory = new Map<string, { revenue: number; profit: number }>();
+  for (const r of sales) {
+    const key = r.category?.trim() || UNCATEGORIZED_LABEL;
+    const bucket = byCategory.get(key) ?? { revenue: 0, profit: 0 };
+    bucket.revenue += r.revenue;
+    bucket.profit += r.revenue - r.cost;
+    byCategory.set(key, bucket);
+  }
+
+  return [...byCategory.entries()]
+    .map(([category, v]) => ({
+      category,
+      revenue: v.revenue,
+      profit: v.profit,
+      share: totalRevenue === 0 ? 0 : (v.revenue / totalRevenue) * 100,
+    }))
+    .sort((a, b) => b.revenue - a.revenue);
+}
+
+export type SkuRanking = {
+  sku: string;
+  productName: string;
+  quantity: number;
+  revenue: number;
+};
+
+export function aggregateSkuRanking(sales: SaleRow[], limit = 10): SkuRanking[] {
+  const bySku = new Map<string, SkuRanking>();
+  for (const r of sales) {
+    const bucket = bySku.get(r.sku) ?? { sku: r.sku, productName: r.product_name, quantity: 0, revenue: 0 };
+    bucket.quantity += r.quantity;
+    bucket.revenue += r.revenue;
+    bySku.set(r.sku, bucket);
+  }
+
+  return [...bySku.values()].sort((a, b) => b.revenue - a.revenue).slice(0, limit);
+}
+
+export type InventoryRisk = "stockout" | "excess" | "normal";
+
+export type InventoryTurnoverRow = {
+  sku: string;
+  productName: string;
+  stockQuantity: number;
+  soldQuantity: number;
+  turnoverRate: number; // 期間内販売数 ÷ 現在庫数
+  risk: InventoryRisk;
+};
+
+// 回転率が高いほど売れ行きが早く欠品リスク、低いほど売れ残り＝過剰在庫リスクと判定する簡易しきい値。
+// 発注リードタイム等は考慮しないMVP版の目安であり、実運用ではクライアントごとに調整が必要。
+const STOCKOUT_RISK_THRESHOLD = 1.0;
+const EXCESS_STOCK_THRESHOLD = 0.3;
+
+function judgeInventoryRisk(turnoverRate: number): InventoryRisk {
+  if (turnoverRate >= STOCKOUT_RISK_THRESHOLD) return "stockout";
+  if (turnoverRate < EXCESS_STOCK_THRESHOLD) return "excess";
+  return "normal";
+}
+
+export function aggregateInventoryTurnover(sales: SaleRow[], inventory: InventoryRow[]): InventoryTurnoverRow[] {
+  const soldBySku = new Map<string, number>();
+  for (const r of sales) {
+    soldBySku.set(r.sku, (soldBySku.get(r.sku) ?? 0) + r.quantity);
+  }
+
+  return inventory
+    .map((item) => {
+      const soldQuantity = soldBySku.get(item.sku) ?? 0;
+      const turnoverRate = item.stock_quantity === 0 ? 0 : soldQuantity / item.stock_quantity;
+      return {
+        sku: item.sku,
+        productName: item.product_name,
+        stockQuantity: item.stock_quantity,
+        soldQuantity,
+        turnoverRate,
+        risk: judgeInventoryRisk(turnoverRate),
+      };
+    })
+    .sort((a, b) => b.turnoverRate - a.turnoverRate);
 }
