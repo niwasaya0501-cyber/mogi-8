@@ -1,5 +1,5 @@
 import { Card, CardHeader } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency, formatPercent } from "@/lib/utils";
 
 type KpiCardProps = {
   label: string;
@@ -9,8 +9,7 @@ type KpiCardProps = {
 };
 
 function formatValue(value: number, format: KpiCardProps["format"]) {
-  if (format === "currency") return `¥${Math.round(value).toLocaleString()}`;
-  return `${value.toFixed(1)}%`;
+  return format === "currency" ? formatCurrency(value) : formatPercent(value);
 }
 
 export function KpiCard({ label, value, format, momChange }: KpiCardProps) {

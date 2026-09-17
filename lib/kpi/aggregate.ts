@@ -79,10 +79,10 @@ export type CategoryBreakdown = {
 const UNCATEGORIZED_LABEL = "未分類";
 
 export function aggregateCategoryBreakdown(sales: SaleRow[]): CategoryBreakdown[] {
-  const totalRevenue = sales.reduce((sum, r) => sum + r.revenue, 0);
-
+  let totalRevenue = 0;
   const byCategory = new Map<string, { revenue: number; profit: number }>();
   for (const r of sales) {
+    totalRevenue += r.revenue;
     const key = r.category?.trim() || UNCATEGORIZED_LABEL;
     const bucket = byCategory.get(key) ?? { revenue: 0, profit: 0 };
     bucket.revenue += r.revenue;
@@ -130,18 +130,30 @@ export type InventoryTurnoverRow = {
   risk: InventoryRisk;
 };
 
-// 回転率が高いほど売れ行きが早く欠品リスク、低いほど売れ残り＝過剰在庫リスクと判定する簡易しきい値。
-// 発注リードタイム等は考慮しないMVP版の目安であり、実運用ではクライアントごとに調整が必要。
-const STOCKOUT_RISK_THRESHOLD = 1.0;
-const EXCESS_STOCK_THRESHOLD = 0.3;
+export type InventoryRiskThresholds = {
+  stockout: number;
+  excess: number;
+};
 
-function judgeInventoryRisk(turnoverRate: number): InventoryRisk {
-  if (turnoverRate >= STOCKOUT_RISK_THRESHOLD) return "stockout";
-  if (turnoverRate < EXCESS_STOCK_THRESHOLD) return "excess";
+// 回転率が高いほど売れ行きが早く欠品リスク、低いほど売れ残り＝過剰在庫リスクと判定する簡易しきい値。
+// 発注リードタイム等は考慮しないMVP版の目安であり、実運用ではクライアントごとに調整が必要なため、
+// 呼び出し側から上書きできるようデフォルト値として定義する。
+export const DEFAULT_INVENTORY_RISK_THRESHOLDS: InventoryRiskThresholds = {
+  stockout: 1.0,
+  excess: 0.3,
+};
+
+function judgeInventoryRisk(turnoverRate: number, thresholds: InventoryRiskThresholds): InventoryRisk {
+  if (turnoverRate >= thresholds.stockout) return "stockout";
+  if (turnoverRate < thresholds.excess) return "excess";
   return "normal";
 }
 
-export function aggregateInventoryTurnover(sales: SaleRow[], inventory: InventoryRow[]): InventoryTurnoverRow[] {
+export function aggregateInventoryTurnover(
+  sales: SaleRow[],
+  inventory: InventoryRow[],
+  thresholds: InventoryRiskThresholds = DEFAULT_INVENTORY_RISK_THRESHOLDS,
+): InventoryTurnoverRow[] {
   const soldBySku = new Map<string, number>();
   for (const r of sales) {
     soldBySku.set(r.sku, (soldBySku.get(r.sku) ?? 0) + r.quantity);
@@ -157,7 +169,7 @@ export function aggregateInventoryTurnover(sales: SaleRow[], inventory: Inventor
         stockQuantity: item.stock_quantity,
         soldQuantity,
         turnoverRate,
-        risk: judgeInventoryRisk(turnoverRate),
+        risk: judgeInventoryRisk(turnoverRate, thresholds),
       };
     })
     .sort((a, b) => b.turnoverRate - a.turnoverRate);

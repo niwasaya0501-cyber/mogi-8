@@ -17,6 +17,11 @@ export type UploadAnalysisState = {
   message?: string;
 };
 
+function getRequiredCsvFile(formData: FormData, field: string): File | null {
+  const file = formData.get(field);
+  return file instanceof File && file.size > 0 ? file : null;
+}
+
 export async function runAnalysisFromUpload(
   _prevState: UploadAnalysisState,
   formData: FormData,
@@ -29,25 +34,26 @@ export async function runAnalysisFromUpload(
     return { status: "error", message: "ログインが必要です。再度ログインしてください。" };
   }
 
-  const salesFile = formData.get("salesCsv");
-  if (!(salesFile instanceof File) || salesFile.size === 0) {
+  const salesFile = getRequiredCsvFile(formData, "salesCsv");
+  if (!salesFile) {
     return { status: "error", message: "売上CSVファイルを選択してください。" };
   }
 
-  const inventoryFile = formData.get("inventoryCsv");
-  if (!(inventoryFile instanceof File) || inventoryFile.size === 0) {
+  const inventoryFile = getRequiredCsvFile(formData, "inventoryCsv");
+  if (!inventoryFile) {
     return { status: "error", message: "在庫CSVファイルを選択してください。" };
   }
 
-  const { valid, invalid } = await parseSalesCsv(salesFile);
+  const [{ valid, invalid }, { valid: validInventory }] = await Promise.all([
+    parseSalesCsv(salesFile),
+    parseInventoryCsv(inventoryFile),
+  ]);
   if (valid.length === 0) {
     return {
       status: "error",
       message: "有効な行が1件も見つかりませんでした。売上CSVの列名や中身を確認してください。",
     };
   }
-
-  const { valid: validInventory } = await parseInventoryCsv(inventoryFile);
   if (validInventory.length === 0) {
     return {
       status: "error",
