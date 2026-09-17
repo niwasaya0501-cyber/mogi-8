@@ -1,49 +1,77 @@
 "use server";
 
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { revalidatePath } from "next/cache";
 import { parseSalesCsv } from "@/lib/csv/parser";
 import { aggregateMonthly, summarizeLatestMonth } from "@/lib/kpi/aggregate";
 import { analyzeSalesReport } from "@/lib/ai/analyze";
 import { createClient } from "@/lib/supabase/server";
 
-async function loadSampleSales(): Promise<File> {
-  const filePath = path.join(process.cwd(), "lib/csv/__fixtures__/sales-sample.csv");
-  const buffer = await readFile(filePath);
-  return new File([buffer], "sales-sample.csv", { type: "text/csv" });
-}
+export type UploadAnalysisState = {
+  status: "idle" | "error" | "success";
+  message?: string;
+};
 
-export async function runAnalysis() {
+export async function runAnalysisFromUpload(
+  _prevState: UploadAnalysisState,
+  formData: FormData,
+): Promise<UploadAnalysisState> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    throw new Error("ログインが必要です");
+    return { status: "error", message: "ログインが必要です。再度ログインしてください。" };
   }
 
-  const file = await loadSampleSales();
-  const { valid } = await parseSalesCsv(file);
+  const file = formData.get("salesCsv");
+  if (!(file instanceof File) || file.size === 0) {
+    return { status: "error", message: "CSVファイルを選択してください。" };
+  }
+
+  const { valid, invalid } = await parseSalesCsv(file);
+  if (valid.length === 0) {
+    return {
+      status: "error",
+      message: "有効な行が1件も見つかりませんでした。CSVの列名や中身を確認してください。",
+    };
+  }
+
   const monthly = aggregateMonthly(valid);
   const summary = summarizeLatestMonth(monthly);
   if (!summary) {
-    throw new Error("集計できるデータがありません");
+    return { status: "error", message: "集計できるデータがありませんでした。" };
   }
 
-  const analysis = await analyzeSalesReport({ monthly, summary });
+  let analysis;
+  try {
+    analysis = await analyzeSalesReport({ monthly, summary });
+  } catch {
+    return {
+      status: "error",
+      message: "AI分析でエラーが発生しました。しばらくしてからもう一度お試しください。",
+    };
+  }
 
   const { error } = await supabase.from("reports").insert({
     uploaded_by: user.id,
-    source: "sample",
+    source: "upload",
     monthly_kpi: monthly,
     summary_kpi: summary,
     ai_summary: analysis.summary,
     ai_actions: analysis.actions,
   });
   if (error) {
-    throw new Error(`Supabaseへの保存に失敗しました: ${error.message}`);
+    return { status: "error", message: `保存に失敗しました: ${error.message}` };
   }
 
   revalidatePath("/");
+
+  const skipped = invalid.length;
+  return {
+    status: "success",
+    message:
+      skipped > 0
+        ? `分析が完了しました（${skipped}件の行は形式エラーのためスキップしました）`
+        : "分析が完了しました",
+  };
 }

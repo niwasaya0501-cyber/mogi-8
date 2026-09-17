@@ -1,11 +1,11 @@
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { RevenueTrendChart } from "@/components/dashboard/revenue-trend-chart";
 import { AiSummary } from "@/components/dashboard/ai-summary";
+import { UploadAnalysisForm } from "@/components/dashboard/upload-analysis-form";
 import { Card, CardHeader } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import type { MonthlyKpi, KpiSummary } from "@/lib/kpi/aggregate";
 import { AnalysisSchema } from "@/lib/ai/schema";
-import { runAnalysis } from "./actions";
 import { signOut } from "./auth/actions";
 
 type ReportRow = {
@@ -71,16 +71,16 @@ export default async function DashboardPage() {
       ) : (
         <Card>
           <CardHeader>
-            <p className="text-sm text-zinc-600">まだ分析結果がありません。下のボタンからAI分析を実行してください。</p>
+            <p className="text-sm text-zinc-600">まだ分析結果がありません。下のフォームからCSVをアップロードしてください。</p>
           </CardHeader>
         </Card>
       )}
 
-      <form action={runAnalysis}>
-        <button type="submit" className="rounded-md bg-brand-navy px-4 py-2 text-sm font-semibold text-white">
-          AI分析を実行
-        </button>
-      </form>
+      <Card>
+        <CardHeader>
+          <UploadAnalysisForm />
+        </CardHeader>
+      </Card>
     </main>
   );
 }
