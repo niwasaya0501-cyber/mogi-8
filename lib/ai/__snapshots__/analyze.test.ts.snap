@@ -18,22 +18,19 @@ exports[`analyzeSalesReport > sends the real aggregated CSV numbers to Claude an
       "monthKey": "2025-09",
       "month": "9月",
       "revenue": 148400,
-      "profit": 93400,
-      "repeatRate": 0
+      "profit": 93400
     },
     {
       "monthKey": "2025-10",
       "month": "10月",
       "revenue": 147500,
-      "profit": 92600,
-      "repeatRate": 38.46153846153847
+      "profit": 92600
     },
     {
       "monthKey": "2025-11",
       "month": "11月",
       "revenue": 264700,
-      "profit": 163100,
-      "repeatRate": 46.666666666666664
+      "profit": 163100
     }
   ],
   "summary": {
@@ -46,8 +43,7 @@ exports[`analyzeSalesReport > sends the real aggregated CSV numbers to Claude an
       "momChange": 76.13390928725701
     },
     "repeatRate": {
-      "value": 46.666666666666664,
-      "momChange": 21.33333333333331
+      "value": 28.57142857142857
     }
   },
   "categoryBreakdown": [

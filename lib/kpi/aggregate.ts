@@ -5,7 +5,6 @@ export type MonthlyKpi = {
   month: string; // "9月" (chart label)
   revenue: number;
   profit: number;
-  repeatRate: number; // 0-100
 };
 
 function toMonthKey(date: Date): string {
@@ -28,19 +27,13 @@ export function aggregateMonthly(sales: SaleRow[]): MonthlyKpi[] {
     byMonth.set(key, bucket);
   }
 
-  const seenCustomers = new Set<string>();
   const result: MonthlyKpi[] = [];
 
   for (const [monthKey, rows] of [...byMonth.entries()].sort(([a], [b]) => a.localeCompare(b))) {
     const revenue = rows.reduce((sum, r) => sum + r.revenue, 0);
     const profit = rows.reduce((sum, r) => sum + (r.revenue - r.cost), 0);
 
-    const repeatOrders = rows.filter((r) => seenCustomers.has(r.customer_id)).length;
-    const repeatRate = rows.length === 0 ? 0 : (repeatOrders / rows.length) * 100;
-
-    result.push({ monthKey, month: toMonthLabel(monthKey), revenue, profit, repeatRate });
-
-    for (const r of rows) seenCustomers.add(r.customer_id);
+    result.push({ monthKey, month: toMonthLabel(monthKey), revenue, profit });
   }
 
   return result;
@@ -49,7 +42,7 @@ export function aggregateMonthly(sales: SaleRow[]): MonthlyKpi[] {
 export type KpiSummary = {
   revenue: { value: number; momChange?: number };
   profit: { value: number; momChange?: number };
-  repeatRate: { value: number; momChange?: number };
+  repeatRate: { value: number };
 };
 
 function momChange(current: number, previous: number | undefined): number | undefined {
@@ -57,7 +50,7 @@ function momChange(current: number, previous: number | undefined): number | unde
   return ((current - previous) / previous) * 100;
 }
 
-export function summarizeLatestMonth(monthly: MonthlyKpi[]): KpiSummary | undefined {
+export function summarizeLatestMonth(monthly: MonthlyKpi[]): Omit<KpiSummary, "repeatRate"> | undefined {
   if (monthly.length === 0) return undefined;
   const current = monthly[monthly.length - 1];
   const previous = monthly[monthly.length - 2];
@@ -65,8 +58,29 @@ export function summarizeLatestMonth(monthly: MonthlyKpi[]): KpiSummary | undefi
   return {
     revenue: { value: current.revenue, momChange: momChange(current.revenue, previous?.revenue) },
     profit: { value: current.profit, momChange: momChange(current.profit, previous?.profit) },
-    repeatRate: { value: current.repeatRate, momChange: momChange(current.repeatRate, previous?.repeatRate) },
   };
+}
+
+// リピート率＝2ヶ月以上にまたがって購入した顧客数 ÷ 総顧客数（期間全体で1つの値。月ごとには変化しない累積指標）。
+export function calculateRepeatRate(sales: SaleRow[]): number {
+  const monthsByCustomer = new Map<string, Set<string>>();
+  for (const r of sales) {
+    const months = monthsByCustomer.get(r.customer_id) ?? new Set<string>();
+    months.add(toMonthKey(r.order_date));
+    monthsByCustomer.set(r.customer_id, months);
+  }
+
+  const totalCustomers = monthsByCustomer.size;
+  if (totalCustomers === 0) return 0;
+
+  const repeatCustomers = [...monthsByCustomer.values()].filter((months) => months.size >= 2).length;
+  return (repeatCustomers / totalCustomers) * 100;
+}
+
+export function summarizeKpi(monthly: MonthlyKpi[], sales: SaleRow[]): KpiSummary | undefined {
+  const base = summarizeLatestMonth(monthly);
+  if (!base) return undefined;
+  return { ...base, repeatRate: { value: calculateRepeatRate(sales) } };
 }
 
 export type CategoryBreakdown = {

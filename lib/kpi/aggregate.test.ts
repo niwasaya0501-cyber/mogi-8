@@ -7,6 +7,7 @@ import {
   aggregateInventoryTurnover,
   aggregateMonthly,
   aggregateSkuRanking,
+  calculateRepeatRate,
   summarizeLatestMonth,
 } from "./aggregate";
 
@@ -21,21 +22,29 @@ async function loadSalesFixture(): Promise<File> {
 }
 
 describe("aggregateMonthly", () => {
-  it("sums revenue/profit per month and computes cumulative repeat rate", async () => {
+  it("sums revenue/profit per month", async () => {
     const file = await loadSalesFixture();
     const { valid } = await parseSalesCsv(file);
     const monthly = aggregateMonthly(valid);
 
     expect(monthly.map((m) => m.monthKey)).toEqual(["2025-09", "2025-10", "2025-11"]);
 
-    expect(monthly[0]).toMatchObject({ month: "9月", revenue: 148400, profit: 93400, repeatRate: 0 });
+    expect(monthly[0]).toMatchObject({ month: "9月", revenue: 148400, profit: 93400 });
     expect(monthly[1].revenue).toBe(147500);
     expect(monthly[1].profit).toBe(92600);
-    expect(monthly[1].repeatRate).toBeCloseTo((5 / 13) * 100, 5);
 
     expect(monthly[2].revenue).toBe(264700);
     expect(monthly[2].profit).toBe(163100);
-    expect(monthly[2].repeatRate).toBeCloseTo((7 / 15) * 100, 5);
+  });
+});
+
+describe("calculateRepeatRate", () => {
+  it("computes the share of customers who purchased across 2+ distinct months", async () => {
+    const file = await loadSalesFixture();
+    const { valid } = await parseSalesCsv(file);
+
+    // 総顧客28人・2ヶ月以上購入したリピーター8人（教材の例と同じ数値: 28.6%）
+    expect(calculateRepeatRate(valid)).toBeCloseTo((8 / 28) * 100, 5);
   });
 });
 

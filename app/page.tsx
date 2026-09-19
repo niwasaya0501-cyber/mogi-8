@@ -65,7 +65,7 @@ export default async function DashboardPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <KpiCard label="売上" format="currency" value={report.summary_kpi.revenue.value} momChange={report.summary_kpi.revenue.momChange} />
             <KpiCard label="粗利" format="currency" value={report.summary_kpi.profit.value} momChange={report.summary_kpi.profit.momChange} />
-            <KpiCard label="リピート率" format="percent" value={report.summary_kpi.repeatRate.value} momChange={report.summary_kpi.repeatRate.momChange} />
+            <KpiCard label="リピート率" format="percent" value={report.summary_kpi.repeatRate.value} />
           </div>
 
           <RevenueTrendChart data={report.monthly_kpi.map((m) => ({ month: m.month, revenue: m.revenue }))} />

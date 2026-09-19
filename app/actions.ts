@@ -7,7 +7,7 @@ import {
   aggregateInventoryTurnover,
   aggregateMonthly,
   aggregateSkuRanking,
-  summarizeLatestMonth,
+  summarizeKpi,
 } from "@/lib/kpi/aggregate";
 import { analyzeSalesReport } from "@/lib/ai/analyze";
 import { createClient } from "@/lib/supabase/server";
@@ -62,7 +62,7 @@ export async function runAnalysisFromUpload(
   }
 
   const monthly = aggregateMonthly(valid);
-  const summary = summarizeLatestMonth(monthly);
+  const summary = summarizeKpi(monthly, valid);
   if (!summary) {
     return { status: "error", message: "集計できるデータがありませんでした。" };
   }

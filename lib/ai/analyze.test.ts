@@ -18,7 +18,7 @@ const {
   aggregateInventoryTurnover,
   aggregateMonthly,
   aggregateSkuRanking,
-  summarizeLatestMonth,
+  summarizeKpi,
 } = await import("@/lib/kpi/aggregate");
 
 async function loadFixture(name: string): Promise<File> {
@@ -42,7 +42,7 @@ describe("analyzeSalesReport", () => {
     const { valid } = await parseSalesCsv(salesFile);
     const { valid: inventory } = await parseInventoryCsv(inventoryFile);
     const monthly = aggregateMonthly(valid);
-    const summary = summarizeLatestMonth(monthly);
+    const summary = summarizeKpi(monthly, valid);
     if (!summary) throw new Error("fixture produced no monthly summary");
     const categoryBreakdown = aggregateCategoryBreakdown(valid);
     const skuRanking = aggregateSkuRanking(valid);
