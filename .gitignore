@@ -7,3 +7,7 @@ npm-debug.log*
 .DS_Store
 .vercel
 .env*
+.agents/
+.claude/
+skills-lock.json
+supabase/.temp/
